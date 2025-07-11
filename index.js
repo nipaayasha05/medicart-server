@@ -47,6 +47,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/getMedicine", async (req, res) => {
+      const email = req.query.email;
+      const result = await medicinesCollection.find({ email }).toArray();
+      res.send(result);
+    });
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
