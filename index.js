@@ -10,7 +10,7 @@ require("dotenv").config();
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.sgjw94w.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -32,6 +32,7 @@ async function run() {
     const db = client.db("medicinedb");
     const usersCollection = db.collection("users");
     const medicinesCollection = db.collection("medicine");
+    const medicinesAdvertisement = db.collection("advertisement");
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
@@ -47,9 +48,38 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/addAdvertisement", async (req, res) => {
+      const addAdvertisement = req.body;
+      const result = await medicinesAdvertisement.insertOne(addAdvertisement);
+      res.send(result);
+    });
+
     app.get("/getMedicine", async (req, res) => {
       const email = req.query.email;
       const result = await medicinesCollection.find({ email }).toArray();
+      res.send(result);
+    });
+
+    app.get("/getAdvertisement", async (req, res) => {
+      const email = req.query.email;
+      const result = await medicinesAdvertisement.find({ email }).toArray();
+      res.send(result);
+    });
+
+    app.get("/getAdminAdvertise", async (req, res) => {
+      const result = await medicinesAdvertisement.find().toArray();
+      res.send(result);
+    });
+
+    app.patch("/advertise-status/:id", async (req, res) => {
+      const { id } = req.params;
+      const { status } = req.body;
+      const result = await medicinesAdvertisement.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        { $set: { status } }
+      );
       res.send(result);
     });
 
