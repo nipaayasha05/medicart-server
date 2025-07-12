@@ -33,6 +33,7 @@ async function run() {
     const usersCollection = db.collection("users");
     const medicinesCollection = db.collection("medicine");
     const medicinesAdvertisement = db.collection("advertisement");
+    const cartCollection = db.collection("cart");
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
@@ -54,9 +55,19 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/add-to-cart", async (req, res) => {
+      const cartItem = req.body;
+      const result = await cartCollection.insertOne(cartItem);
+      res.send(result);
+    });
+
     app.get("/getMedicine", async (req, res) => {
       const email = req.query.email;
       const result = await medicinesCollection.find({ email }).toArray();
+      res.send(result);
+    });
+    app.get("/getAllMedicine", async (req, res) => {
+      const result = await medicinesCollection.find().toArray();
       res.send(result);
     });
 
@@ -68,6 +79,12 @@ async function run() {
 
     app.get("/getAdminAdvertise", async (req, res) => {
       const result = await medicinesAdvertisement.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/get-add-to-cart", async (req, res) => {
+      const email = req.query.email;
+      const result = await cartCollection.find({ userEmail: email }).toArray();
       res.send(result);
     });
 
