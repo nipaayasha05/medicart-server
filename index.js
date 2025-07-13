@@ -34,6 +34,7 @@ async function run() {
     const medicinesCollection = db.collection("medicine");
     const medicinesAdvertisement = db.collection("advertisement");
     const cartCollection = db.collection("cart");
+    const paymentCollection = db.collection("payment");
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
@@ -58,6 +59,12 @@ async function run() {
     app.post("/add-to-cart", async (req, res) => {
       const cartItem = req.body;
       const result = await cartCollection.insertOne(cartItem);
+      res.send(result);
+    });
+
+    app.post("/checkout", async (req, res) => {
+      const orderData = req.body;
+      const result = await paymentCollection.insertOne(orderData);
       res.send(result);
     });
 
@@ -88,6 +95,21 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/cart-checkout/:id", async (req, res) => {
+    //   const { id } = req.params;
+    //   const result = await cartCollection
+    //     .find({ _id: new ObjectId(id) })
+    //     .toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/checkout/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await paymentCollection.findOne({ _id: new ObjectId(id) });
+
+      res.send(result);
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
@@ -97,6 +119,48 @@ async function run() {
         },
         { $set: { status } }
       );
+      res.send(result);
+    });
+
+    app.patch("/update-cart/:id", async (req, res) => {
+      const { id } = req.params;
+      const filter = { _id: new ObjectId(id) };
+      const { quantity, totalPrice, price, discount } = req.body;
+
+      const updatedDoc = {
+        $set: {
+          quantity: Number(quantity),
+          totalPrice: Number(totalPrice),
+          price: Number(price),
+          discount: Number(discount),
+        },
+      };
+
+      const result = await cartCollection.updateOne(filter, updatedDoc);
+
+      res.send(result);
+    });
+
+    // app.patch("/checkbox/:id", async (req, res) => {
+    //   const { id } = req.params;
+    //   const { selected } = req.body;
+    //   const filter = { _id: new ObjectId(id) };
+    //   const updatedDoc = { $set: { selected } };
+    //   const result = await cartCollection.updateOne(filter, updatedDoc);
+    //   res.send(result);
+    // });
+
+    app.delete("/cart-delete/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.delete("/all-cart-delete", async (req, res) => {
+      const { email } = req.query;
+
+      const result = await cartCollection.deleteMany({ userEmail: email });
       res.send(result);
     });
 
