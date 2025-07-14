@@ -4,6 +4,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
 
+const stripe = require("stripe")(process.env.PAYMENT_GATEWAY_KEY);
+
 // DsiyMUjOCfTiWmLY
 //medicine-selling
 
@@ -35,6 +37,7 @@ async function run() {
     const medicinesAdvertisement = db.collection("advertisement");
     const cartCollection = db.collection("cart");
     const paymentCollection = db.collection("payment");
+    const paymentCompleteCollection = db.collection("payment-complete");
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
@@ -65,6 +68,22 @@ async function run() {
     app.post("/checkout", async (req, res) => {
       const orderData = req.body;
       const result = await paymentCollection.insertOne(orderData);
+      res.send(result);
+    });
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const amountInCents = req.body.amountInCents;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({ clientSecret: paymentIntent.client_secret });
+    });
+
+    app.post("/payments-complete", async (req, res) => {
+      const checkoutInfo = req.body;
+      const result = await paymentCompleteCollection.insertOne(checkoutInfo);
       res.send(result);
     });
 
@@ -109,6 +128,8 @@ async function run() {
 
       res.send(result);
     });
+
+    // app.get('/payments-complete',async)
 
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
