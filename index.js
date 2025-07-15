@@ -142,6 +142,38 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/payment-history-all", async (req, res) => {
+      const result = await paymentCompleteCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/seller-payment-history", async (req, res) => {
+      const sellerEmail = req.query.email;
+      const allPayments = await paymentCompleteCollection.find().toArray();
+      const sellerPayments = [];
+      allPayments.forEach((payment) => {
+        const sellerItems = payment.items.filter(
+          (item) => item.addedBy === sellerEmail
+        );
+        if (sellerItems.length > 0) {
+          sellerItems.forEach((item) => {
+            sellerPayments.push({
+              _id: payment._id,
+              transaction: payment.transaction,
+              orderDate: payment.orderDate,
+              status: payment.status,
+              buyerEmail: payment.email,
+              itemName: item.itemName,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice,
+              item: item.itemName,
+            });
+          });
+        }
+      });
+      res.send(sellerPayments);
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
