@@ -131,14 +131,16 @@ async function run() {
 
     app.get("/invoice/:id", async (req, res) => {
       const { id } = req.params;
-      const result = await paymentCompleteCollection.findOne({
-        _id: id,
-      });
+      const result = await paymentCompleteCollection.findOne({ _id: id });
 
       res.send(result);
     });
 
-    // app.get('/payments-complete',async)
+    app.get("/payment-history", async (req, res) => {
+      const email = req.query.email;
+      const result = await paymentCompleteCollection.find({ email }).toArray();
+      res.send(result);
+    });
 
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
