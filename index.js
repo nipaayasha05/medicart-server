@@ -129,6 +129,15 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/invoice/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await paymentCompleteCollection.findOne({
+        _id: id,
+      });
+
+      res.send(result);
+    });
+
     // app.get('/payments-complete',async)
 
     app.patch("/advertise-status/:id", async (req, res) => {
