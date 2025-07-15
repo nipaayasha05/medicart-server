@@ -214,6 +214,16 @@ async function run() {
     //   res.send(result);
     // });
 
+    app.patch("/update-payment-status/:id", async (req, res) => {
+      const { id } = req.params;
+      const { status } = req.body;
+      const result = await paymentCompleteCollection.updateOne(
+        { _id: id },
+        { $set: { status: "paid" } }
+      );
+      res.send(result);
+    });
+
     app.delete("/cart-delete/:id", async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
