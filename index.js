@@ -190,6 +190,31 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/seller-sales-revenue", async (req, res) => {
+      const sellerEmail = req.query.email;
+      const allPayments = await paymentCompleteCollection.find().toArray();
+
+      let paidTotal = 0;
+      let pendingTotal = 0;
+
+      allPayments.forEach((payment) => {
+        payment.items.forEach((item) => {
+          if (item.addedBy === sellerEmail) {
+            if (payment.status === "paid") {
+              paidTotal += item.totalPrice;
+            }
+            if (payment.status === "pending") {
+              pendingTotal += item.totalPrice;
+            }
+          }
+        });
+      });
+      res.send({
+        paidTotal: parseFloat(paidTotal.toFixed(2)),
+        pendingTotal: parseFloat(pendingTotal.toFixed(2)),
+      });
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
