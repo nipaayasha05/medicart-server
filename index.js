@@ -174,6 +174,16 @@ async function run() {
       res.send(sellerPayments);
     });
 
+    app.get("/all-users", async (req, res) => {
+      const filter = {
+        email: {
+          $ne: req?.user?.email,
+        },
+      };
+      const result = await usersCollection.find(filter).toArray();
+      res.send(result);
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
@@ -220,6 +230,18 @@ async function run() {
       const result = await paymentCompleteCollection.updateOne(
         { _id: id },
         { $set: { status: "paid" } }
+      );
+      res.send(result);
+    });
+
+    app.patch("/update-user-role/:id", async (req, res) => {
+      const { id } = req.params;
+      const { role } = req.body;
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: { role },
+        }
       );
       res.send(result);
     });
