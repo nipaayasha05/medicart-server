@@ -184,6 +184,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/user", async (req, res) => {
+      const email = req.query.email;
+      const result = await usersCollection.find({ email }).toArray();
+      res.send(result);
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
