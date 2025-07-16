@@ -38,6 +38,7 @@ async function run() {
     const cartCollection = db.collection("cart");
     const paymentCollection = db.collection("payment");
     const paymentCompleteCollection = db.collection("payment-complete");
+    const categoryCollection = db.collection("category");
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
@@ -87,9 +88,18 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/manageCategory", async (req, res) => {
+      const category = req.body;
+      const result = await categoryCollection.insertOne(category);
+      res.send(result);
+    });
+
     app.get("/getMedicine", async (req, res) => {
       const email = req.query.email;
-      const result = await medicinesCollection.find({ email }).toArray();
+      const result = await medicinesCollection
+        .find({ email })
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
     app.get("/getAllMedicine", async (req, res) => {
@@ -104,7 +114,10 @@ async function run() {
     });
 
     app.get("/getAdminAdvertise", async (req, res) => {
-      const result = await medicinesAdvertisement.find().toArray();
+      const result = await medicinesAdvertisement
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -236,6 +249,39 @@ async function run() {
       });
     });
 
+    app.get("/manageCategory", async (req, res) => {
+      const result = await categoryCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.send(result);
+    });
+
+    app.get("/manageCategoryCard", async (req, res) => {
+      const categories = await categoryCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray();
+
+      const result = await Promise.all(
+        categories.map(async (category) => {
+          const count = await medicinesCollection.countDocuments({
+            category: category.itemName,
+          });
+          return { ...category, medicineCount: count };
+        })
+      );
+
+      res.send(result);
+    });
+    // app.get("/manageCategoryName", async (req, res) => {
+    //   const result = await categoryCollection
+    //     .find({}, { projection: { itemName: 1 } })
+    //     .toArray();
+    //   res.send(result);
+    // });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
@@ -298,6 +344,17 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/updateCategory/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const category = req.body;
+      const updatedDoc = {
+        $set: category,
+      };
+      const result = await categoryCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
     app.delete("/cart-delete/:id", async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
@@ -309,6 +366,13 @@ async function run() {
       const { email } = req.query;
 
       const result = await cartCollection.deleteMany({ userEmail: email });
+      res.send(result);
+    });
+
+    app.delete("/category-delete/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await categoryCollection.deleteOne(query);
       res.send(result);
     });
 
