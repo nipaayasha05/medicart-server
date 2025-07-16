@@ -215,6 +215,27 @@ async function run() {
       });
     });
 
+    app.get("/admin-sales-revenue", async (req, res) => {
+      const allPayments = await paymentCompleteCollection.find().toArray();
+
+      let paidTotal = 0;
+      let pendingTotal = 0;
+
+      allPayments.forEach((payment) => {
+        const total = parseFloat(payment.grandTotal);
+        if (payment.status === "paid") {
+          paidTotal += total;
+        }
+        if (payment.status === "pending") {
+          pendingTotal += total;
+        }
+      });
+      res.send({
+        paidTotal: parseFloat(paidTotal.toFixed(2)),
+        pendingTotal: parseFloat(paidTotal.toFixed(2)),
+      });
+    });
+
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
       const { status } = req.body;
