@@ -103,7 +103,10 @@ async function run() {
       res.send(result);
     });
     app.get("/getAllMedicine", async (req, res) => {
-      const result = await medicinesCollection.find().toArray();
+      const result = await medicinesCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -281,6 +284,12 @@ async function run() {
     //     .toArray();
     //   res.send(result);
     // });
+
+    app.get("/category/:category", async (req, res) => {
+      const { category } = req.params;
+      const result = await medicinesCollection.find({ category }).toArray();
+      res.send(result);
+    });
 
     app.patch("/advertise-status/:id", async (req, res) => {
       const { id } = req.params;
