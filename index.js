@@ -112,7 +112,10 @@ async function run() {
 
     app.get("/getAdvertisement", async (req, res) => {
       const email = req.query.email;
-      const result = await medicinesAdvertisement.find({ email }).toArray();
+      const result = await medicinesAdvertisement
+        .find({ email })
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -126,7 +129,10 @@ async function run() {
 
     app.get("/get-add-to-cart", async (req, res) => {
       const email = req.query.email;
-      const result = await cartCollection.find({ userEmail: email }).toArray();
+      const result = await cartCollection
+        .find({ userEmail: email })
+        .sort({ addedAt: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -159,13 +165,19 @@ async function run() {
     });
 
     app.get("/payment-history-all", async (req, res) => {
-      const result = await paymentCompleteCollection.find().toArray();
+      const result = await paymentCompleteCollection
+        .find()
+        .sort({ orderDate: -1 })
+        .toArray();
       res.send(result);
     });
 
     app.get("/seller-payment-history", async (req, res) => {
       const sellerEmail = req.query.email;
-      const allPayments = await paymentCompleteCollection.find().toArray();
+      const allPayments = await paymentCompleteCollection
+        .find()
+        .sort({ orderDate: -1 })
+        .toArray();
       const sellerPayments = [];
       allPayments.forEach((payment) => {
         const sellerItems = payment.items.filter(
@@ -190,19 +202,45 @@ async function run() {
       res.send(sellerPayments);
     });
 
+    app.get("/admin-sales-report", async (req, res) => {
+      const payments = await paymentCompleteCollection
+        .find()
+        .sort({ orderDate: -1 })
+        .toArray();
+      const result = [];
+      payments.forEach((payment) => {
+        payment.items.forEach((item) => {
+          result.push({
+            medicineName: item.itemName,
+            sellerName: item.addedBy,
+            buyerName: payment.email,
+            quantity: item.quantity,
+            totalPrice: item.totalPrice,
+            orderDate: payment.orderDate,
+            transaction: payment.transaction,
+            status: payment.status,
+          });
+        });
+      });
+      res.send(result);
+    });
+
     app.get("/all-users", async (req, res) => {
       const filter = {
         email: {
           $ne: req?.user?.email,
         },
       };
-      const result = await usersCollection.find(filter).toArray();
+      const result = await usersCollection
+        .find(filter)
+        .sort({ created_at: -1 })
+        .toArray();
       res.send(result);
     });
 
     app.get("/user", async (req, res) => {
       const email = req.query.email;
-      const result = await usersCollection.find({ email }).toArray();
+      const result = await usersCollection.findOne({ email });
       res.send(result);
     });
 
