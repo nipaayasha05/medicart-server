@@ -13,7 +13,10 @@ const stripe = require("stripe")(process.env.PAYMENT_GATEWAY_KEY);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://illustrious-pudding-bb0b01.netlify.app",
+    ],
     credentials: true,
   })
 );
@@ -88,9 +91,8 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: process.env.JWT_SECRET_KEY === "production",
-          sameSite:
-            process.env.JWT_SECRET_KEY === "production" ? "none" : "strict",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
@@ -99,8 +101,8 @@ async function run() {
       res
         .clearCookie("token", {
           maxAge: 0,
-          secure: process.env.JWT_SECRET_KEY === "production",
-          sameSite: process.JWT_SECRET_KEY === "production" ? "none" : "strict",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.NODE_ENV === "production" ? "none" : "strict",
         })
         .send({ success: true });
     });
@@ -227,14 +229,6 @@ async function run() {
         .toArray();
       res.send(result);
     });
-
-    // app.get("/cart-checkout/:id", async (req, res) => {
-    //   const { id } = req.params;
-    //   const result = await cartCollection
-    //     .find({ _id: new ObjectId(id) })
-    //     .toArray();
-    //   res.send(result);
-    // });
 
     app.get("/checkout/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
