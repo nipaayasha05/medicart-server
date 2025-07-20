@@ -163,16 +163,132 @@ async function run() {
 
     app.get("/getMedicine", verifyToken, verifySeller, async (req, res) => {
       const email = req.query.email;
+      const search = req.query.search;
+      const sort = req.query.sort;
+      let query = {};
+
+      if (search) {
+        const isNumber = !isNaN(search);
+
+        if (isNumber) {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+              {
+                genericName: { $regex: search, $options: "i" },
+              },
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+              {
+                price: parseFloat(search),
+              },
+              {
+                discount: parseFloat(search),
+              },
+            ],
+          };
+        } else {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+              {
+                genericName: { $regex: search, $options: "i" },
+              },
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+            ],
+          };
+        }
+      }
+
+      let sortOperation = { createdAt: -1 };
+
+      if (email) {
+        query.email = email;
+      }
+
+      if (sort === "Low to High") {
+        sortOperation = { price: 1 };
+      } else if (sort === "High to Low") {
+        sortOperation = { price: -1 };
+      }
+
       const result = await medicinesCollection
-        .find({ email })
-        .sort({ createdAt: -1 })
+        .find(query)
+        .sort(sortOperation)
         .toArray();
       res.send(result);
     });
+
     app.get("/getAllMedicine", async (req, res) => {
+      const search = req.query.search;
+      const sort = req.query.sort;
+      let query = {};
+
+      if (search) {
+        const isNumber = !isNaN(search);
+
+        if (isNumber) {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+              {
+                price: parseFloat(search),
+              },
+              {
+                discount: parseFloat(search),
+              },
+            ],
+          };
+        } else {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+            ],
+          };
+        }
+      }
+      let sortOperation = { createdAt: -1 };
+
+      if (sort === "Low to High") {
+        sortOperation = { price: 1 };
+      } else if (sort === "High to Low") {
+        sortOperation = { price: -1 };
+      }
+
       const result = await medicinesCollection
-        .find()
-        .sort({ createdAt: -1 })
+        .find(query)
+        .sort(sortOperation)
         .toArray();
       res.send(result);
     });
@@ -214,9 +330,66 @@ async function run() {
 
     app.get("/get-add-to-cart", verifyToken, async (req, res) => {
       const email = req.query.email;
+      const search = req.query.search;
+      const sort = req.query.sort;
+      let query = {};
+
+      if (search) {
+        const isNumber = !isNaN(search);
+
+        if (isNumber) {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+              {
+                price: parseFloat(search),
+              },
+              {
+                discount: parseFloat(search),
+              },
+            ],
+          };
+        } else {
+          query = {
+            $or: [
+              {
+                itemName: { $regex: search, $options: "i" },
+              },
+
+              {
+                category: { $regex: search, $options: "i" },
+              },
+              {
+                company: { $regex: search, $options: "i" },
+              },
+            ],
+          };
+        }
+      }
+
+      let sortOperation = { addedAt: -1 };
+
+      if (email) {
+        query.userEmail = email;
+      }
+
+      if (sort === "Low to High") {
+        sortOperation = { price: 1 };
+      } else if (sort === "High to Low") {
+        sortOperation = { price: -1 };
+      }
       const result = await cartCollection
-        .find({ userEmail: email })
-        .sort({ addedAt: -1 })
+        .find(query)
+        .sort(sortOperation)
         .toArray();
       res.send(result);
     });
@@ -246,7 +419,47 @@ async function run() {
 
     app.get("/payment-history", verifyToken, async (req, res) => {
       const email = req.query.email;
-      const result = await paymentCompleteCollection.find({ email }).toArray();
+      const search = req.query.search;
+      const sort = req.query.sort;
+
+      let query = {};
+
+      if (search) {
+        const isNumber = !isNaN(search);
+        if (isNumber) {
+          query = {
+            $or: [
+              { transaction: { $regex: search, $options: "i" } },
+              { status: { $regex: search, $options: "i" } },
+              { grandTotal: parseFloat(search) },
+            ],
+          };
+        } else {
+          query = {
+            $or: [
+              { transaction: { $regex: search, $options: "i" } },
+              { status: { $regex: search, $options: "i" } },
+            ],
+          };
+        }
+      }
+
+      let sortOperation = { orderDate: -1 };
+
+      if (email) {
+        query.email = email;
+      }
+
+      if (sort === "Low to High") {
+        sortOperation = { grandTotal: 1 };
+      } else if (sort === "High to Low") {
+        sortOperation = { grandTotal: -1 };
+      }
+
+      const result = await paymentCompleteCollection
+        .find(query)
+        .sort(sortOperation)
+        .toArray();
       res.send(result);
     });
 
@@ -255,9 +468,42 @@ async function run() {
       verifyToken,
       verifyAdmin,
       async (req, res) => {
+        const search = req.query.search;
+        const sort = req.query.sort;
+
+        let query = {};
+
+        if (search) {
+          const isNumber = !isNaN(search);
+          if (isNumber) {
+            query = {
+              $or: [
+                { transaction: { $regex: search, $options: "i" } },
+                { status: { $regex: search, $options: "i" } },
+                { grandTotal: parseFloat(search) },
+              ],
+            };
+          } else {
+            query = {
+              $or: [
+                { transaction: { $regex: search, $options: "i" } },
+                { status: { $regex: search, $options: "i" } },
+              ],
+            };
+          }
+        }
+
+        let sortOperation = { orderDate: -1 };
+
+        if (sort === "Low to High") {
+          sortOperation = { grandTotal: 1 };
+        } else if (sort === "High to Low") {
+          sortOperation = { grandTotal: -1 };
+        }
+
         const result = await paymentCompleteCollection
-          .find()
-          .sort({ orderDate: -1 })
+          .find(query)
+          .sort(sortOperation)
           .toArray();
         res.send(result);
       }
@@ -269,6 +515,11 @@ async function run() {
       verifySeller,
       async (req, res) => {
         const sellerEmail = req.query.email;
+        const search = req.query.search;
+        const sort = req.query.sort;
+
+        let query = {};
+
         const allPayments = await paymentCompleteCollection
           .find()
           .sort({ orderDate: -1 })
@@ -294,7 +545,31 @@ async function run() {
             });
           }
         });
-        res.send(sellerPayments);
+
+        let filterPayments = sellerPayments;
+        if (search) {
+          const lowerSearch = search.toLowerCase();
+          filterPayments = filterPayments.filter(
+            (payment) =>
+              payment.itemName.toLowerCase().includes(lowerSearch) ||
+              payment.buyerEmail.toLowerCase().includes(lowerSearch) ||
+              payment.transaction.toLowerCase().includes(lowerSearch) ||
+              payment.quantity.toString().includes(lowerSearch) ||
+              payment.totalPrice.toString().includes(lowerSearch)
+          );
+        }
+
+        if (sort === "Low to High") {
+          filterPayments.sort((a, b) => a.totalPrice - b.totalPrice);
+        } else if (sort === "High to Low") {
+          filterPayments.sort((a, b) => b.totalPrice - a.totalPrice);
+        } else {
+          filterPayments.sort(
+            (a, b) => new Date(b.orderDate) - new Date(a.orderDate)
+          );
+        }
+
+        res.send(filterPayments);
       }
     );
 
@@ -303,6 +578,9 @@ async function run() {
       verifyToken,
       verifyAdmin,
       async (req, res) => {
+        const search = req.query.search;
+        const sort = req.query.sort;
+
         const payments = await paymentCompleteCollection
           .find()
           .sort({ orderDate: -1 })
@@ -322,7 +600,30 @@ async function run() {
             });
           });
         });
-        res.send(result);
+
+        let filterSalesReport = result;
+        if (search) {
+          const lowerSearch = search.toLowerCase();
+          filterSalesReport = filterSalesReport.filter(
+            (payment) =>
+              payment.medicineName.toLowerCase().includes(lowerSearch) ||
+              payment.buyerName.toLowerCase().includes(lowerSearch) ||
+              payment.sellerName.toLowerCase().includes(lowerSearch) ||
+              payment.transaction.toLowerCase().includes(lowerSearch)
+          );
+        }
+
+        if (sort === "Low to High") {
+          filterSalesReport.sort((a, b) => a.totalPrice - b.totalPrice);
+        } else if (sort === "High to Low") {
+          filterSalesReport.sort((a, b) => b.totalPrice - a.totalPrice);
+        } else {
+          filterSalesReport.sort(
+            (a, b) => new Date(b.orderDate) - new Date(a.orderDate)
+          );
+        }
+
+        res.send(filterSalesReport);
       }
     );
 
@@ -383,26 +684,31 @@ async function run() {
       }
     );
 
-    app.get("/admin-sales-revenue", async (req, res) => {
-      const allPayments = await paymentCompleteCollection.find().toArray();
+    app.get(
+      "/admin-sales-revenue",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const allPayments = await paymentCompleteCollection.find().toArray();
 
-      let paidTotal = 0;
-      let pendingTotal = 0;
+        let paidTotal = 0;
+        let pendingTotal = 0;
 
-      allPayments.forEach((payment) => {
-        const total = parseFloat(payment.grandTotal);
-        if (payment.status === "paid") {
-          paidTotal += total;
-        }
-        if (payment.status === "pending") {
-          pendingTotal += total;
-        }
-      });
-      res.send({
-        paidTotal: parseFloat(paidTotal.toFixed(2)),
-        pendingTotal: parseFloat(paidTotal.toFixed(2)),
-      });
-    });
+        allPayments.forEach((payment) => {
+          const total = parseFloat(payment.grandTotal);
+          if (payment.status === "paid") {
+            paidTotal += total;
+          }
+          if (payment.status === "pending") {
+            pendingTotal += total;
+          }
+        });
+        res.send({
+          paidTotal: parseFloat(paidTotal.toFixed(2)),
+          pendingTotal: parseFloat(paidTotal.toFixed(2)),
+        });
+      }
+    );
 
     app.get("/manageCategory", verifyToken, verifyAdmin, async (req, res) => {
       const result = await categoryCollection

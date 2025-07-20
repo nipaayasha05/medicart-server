@@ -1,14 +1,14 @@
 ## Medicart
 
-# Admin
+## Admin
 
 - username :admin
 - email:admin@gmail.com
 - password:ABC123abc@
 
-# Live site URL :https://illustrious-pudding-bb0b01.netlify.app/
+## Live site URL :https://illustrious-pudding-bb0b01.netlify.app/
 
-# features
+## features
 
 - JWT-based authentication using jsonwebtoken
 - Middleware for verifyToken, verifyAdmin, verifySeller.
