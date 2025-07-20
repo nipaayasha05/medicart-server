@@ -479,6 +479,7 @@ async function run() {
             query = {
               $or: [
                 { transaction: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
                 { status: { $regex: search, $options: "i" } },
                 { grandTotal: parseFloat(search) },
               ],
@@ -487,6 +488,7 @@ async function run() {
             query = {
               $or: [
                 { transaction: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
                 { status: { $regex: search, $options: "i" } },
               ],
             };
@@ -609,7 +611,8 @@ async function run() {
               payment.medicineName.toLowerCase().includes(lowerSearch) ||
               payment.buyerName.toLowerCase().includes(lowerSearch) ||
               payment.sellerName.toLowerCase().includes(lowerSearch) ||
-              payment.transaction.toLowerCase().includes(lowerSearch)
+              payment.transaction.toLowerCase().includes(lowerSearch) ||
+              payment.status.toLowerCase().includes(lowerSearch)
           );
         }
 
