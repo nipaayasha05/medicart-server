@@ -109,9 +109,32 @@ async function run() {
 
     app.post("/user", async (req, res) => {
       const userData = req.body;
+
       userData.created_at = new Date().toISOString();
       userData.last_loggedIn = new Date().toISOString();
       const result = await usersCollection.insertOne(userData);
+      res.send(result);
+    });
+
+    app.post("/userSocial", async (req, res) => {
+      const userInfo = req.body;
+
+      // const existingUser = await usersCollection.findOne({
+      //   email: userInfo.email,
+      // });
+
+      // if (existingUser) {
+      //   await usersCollection.updateOne(
+      //     {
+      //       email: userInfo.email,
+      //     },
+      //     { $set: { last_loggedIn: new Date().toISOString() } }
+      //   );
+      // }
+
+      userInfo.created_at = new Date().toISOString();
+      userInfo.last_loggedIn = new Date().toISOString();
+      const result = await usersCollection.insertOne(userInfo);
       res.send(result);
     });
 
@@ -761,6 +784,7 @@ async function run() {
 
     app.get("/category/:category", async (req, res) => {
       const { category } = req.params;
+
       const result = await medicinesCollection.find({ category }).toArray();
       res.send(result);
     });
