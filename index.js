@@ -118,19 +118,22 @@ async function run() {
 
     app.post("/userSocial", async (req, res) => {
       const userInfo = req.body;
+      console.log(userInfo);
 
-      // const existingUser = await usersCollection.findOne({
-      //   email: userInfo.email,
-      // });
+      const existingUser = await usersCollection.findOne({
+        email: userInfo.email,
+      });
+      console.log(existingUser);
 
-      // if (existingUser) {
-      //   await usersCollection.updateOne(
-      //     {
-      //       email: userInfo.email,
-      //     },
-      //     { $set: { last_loggedIn: new Date().toISOString() } }
-      //   );
-      // }
+      if (existingUser) {
+        const result = await usersCollection.updateOne(
+          {
+            email: userInfo.email,
+          },
+          { $set: { last_loggedIn: new Date().toISOString() } }
+        );
+        return res.send(result);
+      }
 
       userInfo.created_at = new Date().toISOString();
       userInfo.last_loggedIn = new Date().toISOString();
@@ -253,6 +256,11 @@ async function run() {
         .sort(sortOperation)
         .toArray();
       res.send(result);
+    });
+
+    app.get("/getAllMedicineCount", async (req, res) => {
+      const count = await medicinesCollection.estimatedDocumentCount();
+      res.send({ count });
     });
 
     app.get("/getAllMedicine", async (req, res) => {
