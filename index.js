@@ -264,6 +264,10 @@ async function run() {
     });
 
     app.get("/getAllMedicine", async (req, res) => {
+      // console.log(req.query);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+
       const search = req.query.search;
       const sort = req.query.sort;
       let query = {};
@@ -319,6 +323,8 @@ async function run() {
 
       const result = await medicinesCollection
         .find(query)
+        .skip(page * size)
+        .limit(size)
         .sort(sortOperation)
         .toArray();
       res.send(result);
