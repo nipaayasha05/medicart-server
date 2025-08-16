@@ -90,19 +90,21 @@ async function run() {
 
       res
         .cookie("token", token, {
+          path: "/",
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          secure: true,
+          sameSite: "none",
         })
         .send({ success: true });
     });
 
-    app.get("/logout", async (req, res) => {
+    app.post("/logout", async (req, res) => {
       res
         .clearCookie("token", {
-          maxAge: 0,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.NODE_ENV === "production" ? "none" : "strict",
+          path: "/",
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
         })
         .send({ success: true });
     });
@@ -190,6 +192,8 @@ async function run() {
     app.get("/getMedicine", verifyToken, verifySeller, async (req, res) => {
       const email = req.query.email;
       const search = req.query.search;
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
       const sort = req.query.sort;
       let query = {};
 
@@ -253,9 +257,17 @@ async function run() {
 
       const result = await medicinesCollection
         .find(query)
+        .skip(page * size)
+        .limit(size)
         .sort(sortOperation)
         .toArray();
       res.send(result);
+    });
+
+    app.get("/getMedicine-count", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const count = await medicinesCollection.countDocuments({ email });
+      res.send({ count });
     });
 
     app.get("/getAllMedicineCount", async (req, res) => {
@@ -368,6 +380,8 @@ async function run() {
     app.get("/get-add-to-cart", verifyToken, async (req, res) => {
       const email = req.query.email;
       const search = req.query.search;
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
       const sort = req.query.sort;
       let query = {};
 
@@ -426,9 +440,17 @@ async function run() {
       }
       const result = await cartCollection
         .find(query)
+        .skip(page * size)
+        .limit(size)
         .sort(sortOperation)
         .toArray();
       res.send(result);
+    });
+
+    app.get("/get-add-to-cart-count", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const count = await cartCollection.countDocuments({ userEmail: email });
+      res.send({ count });
     });
 
     app.get("/get-add-to-cart-shop", async (req, res) => {
@@ -457,6 +479,8 @@ async function run() {
     app.get("/payment-history", verifyToken, async (req, res) => {
       const email = req.query.email;
       const search = req.query.search;
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
       const sort = req.query.sort;
 
       let query = {};
@@ -495,9 +519,17 @@ async function run() {
 
       const result = await paymentCompleteCollection
         .find(query)
+        .skip(page * size)
+        .limit(size)
         .sort(sortOperation)
         .toArray();
       res.send(result);
+    });
+
+    app.get("/payment-history-count", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const count = await paymentCompleteCollection.countDocuments({ email });
+      res.send({ count });
     });
 
     app.get(
@@ -507,6 +539,8 @@ async function run() {
       async (req, res) => {
         const search = req.query.search;
         const sort = req.query.sort;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
 
         let query = {};
 
@@ -542,9 +576,44 @@ async function run() {
 
         const result = await paymentCompleteCollection
           .find(query)
+          .skip(page * size)
+          .limit(size)
           .sort(sortOperation)
           .toArray();
         res.send(result);
+      }
+    );
+
+    app.get(
+      "/payment-history-all-count",
+
+      verifyToken,
+      async (req, res) => {
+        const search = req.query.search;
+        let query = {};
+        if (search) {
+          const isNumber = !isNaN(search);
+          if (isNumber) {
+            query = {
+              $or: [
+                { transaction: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { status: { $regex: search, $options: "i" } },
+                { grandTotal: parseFloat(search) },
+              ],
+            };
+          } else {
+            query = {
+              $or: [
+                { transaction: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+                { status: { $regex: search, $options: "i" } },
+              ],
+            };
+          }
+        }
+        const count = await paymentCompleteCollection.countDocuments(query);
+        res.send({ count });
       }
     );
 
@@ -555,6 +624,8 @@ async function run() {
       async (req, res) => {
         const sellerEmail = req.query.email;
         const search = req.query.search;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const sort = req.query.sort;
 
         let query = {};
@@ -607,10 +678,28 @@ async function run() {
             (a, b) => new Date(b.orderDate) - new Date(a.orderDate)
           );
         }
+        const paginatedResult = filterPayments.slice(
+          page * size,
+          page * size + size
+        );
 
-        res.send(filterPayments);
+        res.send(paginatedResult);
       }
     );
+
+    app.get("/seller-payment-history-count", verifyToken, async (req, res) => {
+      const sellerEmail = req.query.email;
+      const allPayments = await paymentCompleteCollection.find().toArray();
+      let sellerPaymentsCount = 0;
+      allPayments.forEach((payment) => {
+        const sellerItems = payment.items.filter(
+          (item) => item.addedBy === sellerEmail
+        );
+        sellerPaymentsCount += sellerItems.length;
+      });
+
+      res.send({ count: sellerPaymentsCount });
+    });
 
     app.get(
       "/admin-sales-report",
@@ -618,6 +707,8 @@ async function run() {
       verifyAdmin,
       async (req, res) => {
         const search = req.query.search;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const sort = req.query.sort;
 
         const payments = await paymentCompleteCollection
@@ -663,7 +754,59 @@ async function run() {
           );
         }
 
-        res.send(filterSalesReport);
+        const paginatedResult = filterSalesReport.slice(
+          page * size,
+          page * size + size
+        );
+
+        res.send(paginatedResult);
+      }
+    );
+
+    app.get(
+      "/admin-sales-report-count",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const search = req.query.search;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
+        const sort = req.query.sort;
+
+        const payments = await paymentCompleteCollection
+          .find()
+          .sort({ orderDate: -1 })
+          .toArray();
+        const result = [];
+        payments.forEach((payment) => {
+          payment.items.forEach((item) => {
+            result.push({
+              medicineName: item.itemName,
+              sellerName: item.addedBy,
+              buyerName: payment.email,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice,
+              orderDate: payment.orderDate,
+              transaction: payment.transaction,
+              status: payment.status,
+            });
+          });
+        });
+
+        let filterSalesReport = result;
+        if (search) {
+          const lowerSearch = search.toLowerCase();
+          filterSalesReport = filterSalesReport.filter(
+            (payment) =>
+              payment.medicineName.toLowerCase().includes(lowerSearch) ||
+              payment.buyerName.toLowerCase().includes(lowerSearch) ||
+              payment.sellerName.toLowerCase().includes(lowerSearch) ||
+              payment.transaction.toLowerCase().includes(lowerSearch) ||
+              payment.status.toLowerCase().includes(lowerSearch)
+          );
+        }
+        const count = filterSalesReport.length;
+        res.send({ count });
       }
     );
 
@@ -745,8 +888,144 @@ async function run() {
         });
         res.send({
           paidTotal: parseFloat(paidTotal.toFixed(2)),
-          pendingTotal: parseFloat(paidTotal.toFixed(2)),
+          pendingTotal: parseFloat(pendingTotal.toFixed(2)),
         });
+      }
+    );
+
+    app.get("/users-revenue", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const allPayments = await paymentCompleteCollection.find().toArray();
+
+      let paidTotal = 0;
+      let pendingTotal = 0;
+
+      allPayments.forEach((payment) => {
+        if (payment.email === email) {
+          if (payment.status === "paid") {
+            paidTotal += payment.grandTotal;
+          }
+          if (payment.status === "pending") {
+            pendingTotal += payment.grandTotal;
+          }
+        }
+      });
+      res.send({
+        paidTotal: parseFloat(paidTotal.toFixed(2)),
+        pendingTotal: parseFloat(pendingTotal.toFixed(2)),
+      });
+    });
+
+    app.get("/users-weekly-revenue", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const today = new Date();
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(today.getDate() - 6);
+
+      // aggregate
+      const result = await paymentCompleteCollection
+        .aggregate([
+          {
+            $addFields: {
+              orderDateObj: { $toDate: "$orderDate" },
+            },
+          },
+          {
+            $match: {
+              orderDateObj: { $gte: oneWeekAgo, $lte: today },
+              status: "paid",
+              email: email,
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: "%Y-%m-%d", date: "$orderDateObj" },
+              },
+              dailyTotal: { $sum: { $toDouble: "$grandTotal" } },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ])
+
+        .toArray();
+      res.send(result);
+    });
+
+    app.get("/seller-weekly-revenue", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const today = new Date();
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(today.getDate() - 6);
+
+      // aggregate
+      const result = await paymentCompleteCollection
+        .aggregate([
+          {
+            $addFields: {
+              orderDateObj: { $toDate: "$orderDate" },
+            },
+          },
+          { $unwind: "$items" },
+          {
+            $match: {
+              orderDateObj: { $gte: oneWeekAgo, $lte: today },
+              status: "paid",
+              "items.addedBy": email,
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: "%Y-%m-%d", date: "$orderDateObj" },
+              },
+              dailyTotal: { $sum: { $toDouble: "$items.totalPrice" } },
+            },
+          },
+
+          { $sort: { _id: 1 } },
+        ])
+
+        .toArray();
+      res.send(result);
+    });
+
+    app.get(
+      "/admin-weekly-sales",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const today = new Date();
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(today.getDate() - 6);
+
+        // MongoDB aggregate
+        const result = await paymentCompleteCollection
+          .aggregate([
+            {
+              $addFields: {
+                orderDateObj: { $toDate: "$orderDate" },
+              },
+            },
+            {
+              $match: {
+                orderDateObj: { $gte: oneWeekAgo, $lte: today },
+                status: "paid",
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $dateToString: { format: "%Y-%m-%d", date: "$orderDateObj" },
+                },
+                dailyTotal: { $sum: { $toDouble: "$grandTotal" } },
+              },
+            },
+            { $sort: { _id: 1 } },
+          ])
+          .toArray();
+
+        res.send(result);
       }
     );
 
@@ -775,7 +1054,7 @@ async function run() {
       const categories = await categoryCollection
         .find()
         .sort({ createdAt: -1 })
-        .limit(6)
+        .limit(8)
         .toArray();
 
       const result = await Promise.all(
@@ -798,9 +1077,21 @@ async function run() {
 
     app.get("/category/:category", async (req, res) => {
       const { category } = req.params;
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
 
-      const result = await medicinesCollection.find({ category }).toArray();
+      const result = await medicinesCollection
+        .find({ category })
+        .skip(page * size)
+        .limit(size)
+        .toArray();
       res.send(result);
+    });
+
+    app.get("/category-count/:category", async (req, res) => {
+      const { category } = req.params;
+      const count = await medicinesCollection.countDocuments({ category });
+      res.send({ count });
     });
 
     app.patch("/advertise-status/:id", async (req, res) => {
