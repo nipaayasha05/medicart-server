@@ -377,6 +377,14 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/category", verifyToken, async (req, res) => {
+      const result = await categoryCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
+      res.send(result);
+    });
+
     app.get("/get-add-to-cart", verifyToken, async (req, res) => {
       const email = req.query.email;
       const search = req.query.search;
@@ -1028,6 +1036,15 @@ async function run() {
         res.send(result);
       }
     );
+
+    app.get("/newArrivals", async (req, res) => {
+      const newArrivals = await medicinesCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .toArray();
+      res.send(newArrivals);
+    });
 
     app.get("/manageCategory", verifyToken, verifyAdmin, async (req, res) => {
       const result = await categoryCollection
